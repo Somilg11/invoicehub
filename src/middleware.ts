@@ -1,47 +1,27 @@
+import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
-import { createServerClient } from "@supabase/ssr";
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+export async function middleware(request: NextRequest) {
+  const res = NextResponse.next()
+  const supabase = createMiddlewareClient({ req: request, res })
 
-export async function middleware(req: NextRequest) {
-  const res = NextResponse.next();
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return req.cookies.getAll().map(({ name, value }) => ({
-            name,
-            value,
-          }));
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            res.cookies.set(name, value, options); // ✅ Modify response cookies, not request cookies
-          });
-        },
-      },
-    }
-  );
-
-  // Refresh session if expired - required for Server Components
   const {
     data: { session },
-    error,
-  } = await supabase.auth.getSession();
+  } = await supabase.auth.getSession()
 
-  if (error) {
-    console.error("Auth session error:", error);
+  // protected routes
+  if (request.nextUrl.pathname.startsWith('/dashboard') && !session) {
+    return NextResponse.redirect(new URL('/sign-in', request.url))
   }
 
-  return res; // ✅ Always return the modified response
+  if (request.nextUrl.pathname === '/' && session) {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
+
+  return res
 }
 
-// Ensure the middleware is only called for relevant paths
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|public|api).*)",
-  ],
-};
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+}
