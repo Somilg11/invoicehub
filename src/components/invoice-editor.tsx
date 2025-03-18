@@ -311,8 +311,24 @@ export default function InvoiceEditor(
 
       await generatePDF({
         invoice: {
-          ...formData,
           id: invoice?.id || "new",
+          client_id: formData.client_id,
+          invoice_number: formData.invoice_number,
+          issue_date: formData.issue_date,
+          due_date: formData.due_date,
+          status: formData.status,
+          notes: formData.notes,
+          tax_rate: formData.tax_rate,
+          subtotal: formData.subtotal,
+          tax_amount: formData.tax_amount,
+          total: formData.total,
+          items: formData.items.map(item => ({
+            ...item,
+            id: item.id || "",
+            invoice_id: invoice?.id || "new",
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })),
           client,
         },
       });

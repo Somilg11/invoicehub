@@ -1,7 +1,12 @@
 import { Invoice, Client } from "@/types/invoice";
 
+interface PDFInvoice
+  extends Omit<Invoice, "user_id" | "created_at" | "updated_at"> {
+  client: Client;
+}
+
 interface PDFGeneratorProps {
-  invoice: Invoice & { client: Client };
+  invoice: PDFInvoice;
 }
 
 export const generatePDF = async ({ invoice }: PDFGeneratorProps) => {
